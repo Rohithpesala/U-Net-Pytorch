@@ -57,10 +57,10 @@ class gta5dataLoader(data.Dataset):
 		lbl_path = self.labelIds[index]
 		img = Image.open(img_path)
 		img = img.resize(self.img_size, Image.NEAREST)
-		img = np.array(img,dtype=np.uint8)
+		img = np.transpose(np.array(img,dtype=np.uint8),[2,1,0])
 		lbl = Image.open(lbl_path)
 		lbl = lbl.resize(self.img_size,Image.NEAREST)
-		lbl = np.array(lbl,dtype=np.uint8)
+		lbl = np.transpose(np.array(lbl,dtype=np.uint8),[1,0])
 		return torch.from_numpy(img), torch.from_numpy(lbl)  
 
 		

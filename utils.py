@@ -44,7 +44,8 @@ def load_model(args):
 	save_path = os.path.join(os.getcwd(),args.run_id,"save")
 	if os.path.isdir(save_path):
 		#load checkpoint
-		pass
+		filename = os.path.join(save_path,"last_checkpoint")
+		return torch.load(filename)
 	else:
 		if args.model_type == "unet":
 			return UNet(args.kernel_size,args.pool_size,args.num_classes,args.pad_type)
@@ -53,11 +54,32 @@ def load_model(args):
 		else:
 			raise ValueError("model is not unet or mlp. Please specify correct model type")
 
-def load_optimizer(model, filename=None):
+def load_optimizer(args, model):
 	optimizer = optim.Adam(model.parameters(), lr=0.01)
-	if filename is not None and os.path.isfile(filename):
+	save_path = os.path.join(os.getcwd(),args.run_id,"save")
+	if os.path.isdir(save_path):
+		filename = os.path.join(save_path,"last_checkpoint_optim")
 		optimizer.load_state_dict(torch.load(filename))
+	return optimizer
 
+def save_model(args,model,best=False):
+	checkpoint_name = "last_checkpoint"
+	if best:
+		checkpoint_name = "best_checkpoint"
+	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
+	torch.save(model,save_path)
+
+def save_optimizer(args,optimizer,best=False):
+	checkpoint_name = "last_checkpoint_optim"
+	if best:
+		checkpoint_name = "best_checkpoint_optim"
+	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
+	torch.save(optimizer.state_dict(),save_path)
+
+
+def save_data(args,model,optimizer,best = False):
+	save_model(args,model,best)
+	save_optimizer(args,optimizer,best)
 
 def getgta5List(rootdir='.',suffix='',label=False):
 	if label == True:

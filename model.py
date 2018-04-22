@@ -171,7 +171,7 @@ class UNet(nn.Module):
 		out_bot = self.max_pool(out4)
 		out_bot = self.bot(out_bot)
 		in_down_4 = self.up_conv4(out_bot)
-		print(out4,out_bot,in_down_4)
+		# print(out4,out_bot,in_down_4)
 		in_4 = torch.cat((out4,in_down_4),1)
 		in_4 = self.upseq4(in_4)
 		in_down_3 = self.up_conv3(out4)

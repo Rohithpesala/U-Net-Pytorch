@@ -43,11 +43,11 @@ from loader import *
 
 
 def dataReader(args):
-	path=args.data_dir
-	img_size = (args.image_height,args.image_width)
-	trainLoaderDict = {}
-	if(args.data_type=='gta5'):
-		images_base = os.path.join(path,'images')
+     path=args.data_dir
+     img_size = (args.image_height,args.image_width)
+     trainLoaderDict = {}
+     if(args.data_type=='gta5'):
+     	images_base = os.path.join(path,'images')
      	annotations_base = os.path.join(path,'labels')
      	labelIds = getgta5List(annotations_base,'.png',True)
      	imageIds = getgta5List(images_base,'.png',False)
@@ -59,5 +59,4 @@ def dataReader(args):
      	trainLoaderDict['train'] = data.DataLoader(gta5_train,batch_size=args.batch_size,shuffle=args.shuffle)
      	trainLoaderDict['test'] = data.DataLoader(gta5_test,batch_size=args.batch_size,shuffle=args.shuffle)
      	trainLoaderDict['validation'] = data.DataLoader(gta5_val,batch_size=args.batch_size,shuffle=args.shuffle)
-
      return trainLoaderDict
