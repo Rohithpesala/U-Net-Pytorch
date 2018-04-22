@@ -9,11 +9,13 @@ import numpy as np
 import random
 from torchvision import transforms
 import sys
+import argparse
 
 
 from constants import *
 from model import UNet
 from run import *
+from utils import *
 
 if HAVE_CUDA:
 	import torch.cuda as cuda
@@ -36,13 +38,17 @@ def get_args():
     parser.add_argument('-b', "--batch_size", default=32)
     parser.add_argument('-l', "--model_type", default="unet")
     parser.add_argument('-s', "--save_every", default=100)
-    parser.add_argument('-i', "--run_id", default=00)
+    parser.add_argument('-i', "--run_id", default="00")
     parser.add_argument('-a', "--data_dir", default="data/gta5")
+    parser.add_argument('-g', "--image_height", default=256)
+    parser.add_argument('-w', "--image_width", default=256)
 
     return parser.parse_args()
 
 def main():
 	args = get_args()
+	# prepare_env(args)
+	# return
 	if args.mode == "validation":
 		validation(args)
 	elif args.mode == "test":

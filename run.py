@@ -23,18 +23,21 @@ def train(args):
 	# instantiate optimizer
 	# call for an epoch
 	prepare_env(args)
-	model = load_model(os.getcwd()+args.output_dir)
+	logger = ""
+	model = load_model(args)
 	criterion = nn.CrossEntropyLoss() # Only for RELU model
-	optimizer = loadOptimizer(model, os.getcwd())
+	optimizer = load_optimizer(model, os.getcwd())
 
 	if HAVE_CUDA:
 		criterion = criterion.cuda()
 	
+	total_training_loss = 0.0
+
 	train_start_time = time.time()
 	epoch_start_time = train_start_time
 	for i in range(args.num_epochs):
 		# run model
-		model = train_epoch(args,dataset_iterator)
+		model, loss = train_epoch(args,dataset_iterator)
 		
 		#Logging info
 		end_time = time.time()
@@ -54,4 +57,4 @@ def test():
 	pass
 
 def train_epoch(args, iterator):
-	
+	pass
