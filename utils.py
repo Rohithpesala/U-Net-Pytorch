@@ -19,3 +19,8 @@ if HAVE_CUDA:
 def get_metrics():
 	# calculate IOU and other metrics required
 	pass
+
+def prepare_env(args):
+	output_dir = args.output_dir
+	run_id = args.run_id
+	if os.path.isdir()
