@@ -49,6 +49,7 @@ def main():
 	args = get_args()
 	# prepare_env(args)
 	# return
+	
 	if args.mode == "validation":
 		validation(args)
 	elif args.mode == "test":
