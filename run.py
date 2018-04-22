@@ -35,6 +35,8 @@ def train(args):
 	# instantiate model and optimizer
 	model = load_model(args)
 	model.train()
+	if HAVE_CUDA:
+		model.cuda()
 	criterion = nn.CrossEntropyLoss()
 	optimizer = load_optimizer(args,model)
 	if HAVE_CUDA:
@@ -47,11 +49,12 @@ def train(args):
 		
 		# run model
 		model, optimizer, present_train_loss = train_epoch(args,train_data,model,optimizer,criterion)
-		present_validation_loss = get_validation_loss(args,all_datasets['validation'],model,criterion)
+		present_validation_loss = get_validation_loss(args,validation_data,model,criterion)
 		save_data(args,model,optimizer)
 		if present_validation_loss<best_validation_loss:
 			save_data(args,model,optimizer,True)
 			best_epoch = i
+			best_validation_loss = present_validation_loss
 		##########################################Logging info#############################################
 		end_time = time.time()
 		epoch_duration = end_time-epoch_start_time
@@ -70,13 +73,30 @@ def train(args):
 def validation(args):
 	pass
 
-def test():
-	pass
+def test(args,best=True,criterion=nn.CrossEntropyLoss()):
+	checkpoint_name = "best_checkpoint"
+	if not best:
+		checkpoint_name = "last_checkpoint"
+	checkpoint_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
+	print checkpoint_path
+	if not os.path.exists(checkpoint_path):
+		raise ValueError("No checkpoint found. Please train the model before testing")
+	all_datasets = dataReader(args)
+	test_data = all_datasets['test']
+	model = load_model(args)
+	test_loss = get_validation_loss(args,test_data,model,criterion)
+	print test_loss
+
+	return test_loss
+
 
 def train_epoch(args, iterator, model, optimizer, criterion):
+	model.train()
 	total_training_loss = 0.0
 	num_batches = 0
 	for i, batch in enumerate(iterator):
+		if HAVE_CUDA:
+			batch.cuda()
 		optimizer.zero_grad()
 
 		# Forward pass
@@ -102,9 +122,12 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 	return model, optimizer, total_training_loss/(num_batches*args.batch_size)
 
 def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
+	model.eval()
 	total_validation_loss = 0.0
 	num_batches = 0
 	for i, batch in enumerate(iterator):
+		if HAVE_CUDA:
+			batch.cuda()
 		batch_data = ag.Variable(batch[0].float())
 		batch_labels = ag.Variable(batch[1].long())
 		pred_labels = model(batch_data)

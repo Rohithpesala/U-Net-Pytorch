@@ -41,10 +41,11 @@ def prepare_env(args):
 
 def load_model(args):
 	model_type = args.model_type
-	save_path = os.path.join(os.getcwd(),args.run_id,"save")
+	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save")
 	if os.path.isdir(save_path):
 		#load checkpoint
 		filename = os.path.join(save_path,"last_checkpoint")
+		print "model load"
 		return torch.load(filename)
 	else:
 		if args.model_type == "unet":
@@ -56,9 +57,10 @@ def load_model(args):
 
 def load_optimizer(args, model):
 	optimizer = optim.Adam(model.parameters(), lr=0.01)
-	save_path = os.path.join(os.getcwd(),args.run_id,"save")
+	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save")
 	if os.path.isdir(save_path):
 		filename = os.path.join(save_path,"last_checkpoint_optim")
+		print "optim_load"
 		optimizer.load_state_dict(torch.load(filename))
 	return optimizer
 
@@ -67,7 +69,7 @@ def save_model(args,model,best=False):
 	if best:
 		checkpoint_name = "best_checkpoint"
 	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
-	torch.save(model,save_path)
+	torch.save(model.cpu(),save_path)
 
 def save_optimizer(args,optimizer,best=False):
 	checkpoint_name = "last_checkpoint_optim"
