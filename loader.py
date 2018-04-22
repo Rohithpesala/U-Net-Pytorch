@@ -6,7 +6,7 @@ import scipy.misc as m
 from torch.utils import data
 
 from utils import *
-from augmentations import *
+
 
 from PIL import Image
 
