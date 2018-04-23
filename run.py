@@ -23,7 +23,6 @@ if HAVE_CUDA:
 def train(args):
 	
 	# Dataset loading and preparing env
-	prepare_env(args)
 	all_datasets = dataReader(args)
 	train_data = all_datasets['train']
 	validation_data = all_datasets['validation']
@@ -43,6 +42,7 @@ def train(args):
 		criterion = criterion.cuda()
 	
 	# log info
+	prepare_env(args)
 	train_start_time = time.time()
 	epoch_start_time = train_start_time
 	for i in range(args.num_epochs):
@@ -103,7 +103,7 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 		batch_data = ag.Variable(batch[0].float())
 		batch_labels = ag.Variable(batch[1].long())
 		pred_labels = model(batch_data)
-		# print torch.max(batch_labels.view(-1))
+		# print torch.min(batch_labels.view(-1))
 		#Backward pass
 		loss = criterion(pred_labels,batch_labels)
 		loss.backward()
@@ -125,17 +125,19 @@ def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
 	model.eval()
 	total_validation_loss = 0.0
 	num_batches = 0
+	accuracy = 0
 	for i, batch in enumerate(iterator):
 		if HAVE_CUDA:
 			batch.cuda()
 		batch_data = ag.Variable(batch[0].float())
 		batch_labels = ag.Variable(batch[1].long())
 		pred_labels = model(batch_data)
-		# print torch.max(batch_labels.view(-1))
+		# print torch.min(batch_labels.view(-1))
 
 		#Backward pass
 		loss = criterion(pred_labels,batch_labels)
 		total_validation_loss += loss.data.cpu().numpy()
+		print "accuracy", get_metrics(pred_labels,batch_labels)
 		num_batches += 1
 		# print total_validation_loss
 

@@ -21,8 +21,15 @@ from model import UNet
 if HAVE_CUDA:
 	import torch.cuda as cuda
 
-def get_metrics():
+def get_metrics(pred,truth):
 	# calculate IOU and other metrics required
+	_, pred = torch.max(pred,1)
+	total_count = 1
+	for i in truth.size():
+		total_count *= i
+	correct_count = torch.sum(pred == truth).float()
+	accuracy = correct_count/total_count
+	return accuracy
 	pass
 
 def prepare_env(args):
