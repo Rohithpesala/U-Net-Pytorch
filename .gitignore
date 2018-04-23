@@ -2,3 +2,5 @@
 *.ipynb
 data/*
 outputs/*
+VOCdevkit/*
+run.sh
