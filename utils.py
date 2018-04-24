@@ -29,8 +29,8 @@ def get_metrics(pred,truth):
 		total_count *= i
 	correct_count = torch.sum(pred == truth).float()
 	accuracy = correct_count/total_count
-	return accuracy
-	pass
+	# print correct_count, total_count
+	return accuracy.data[0]
 
 def prepare_env(args):
 	output_dir = args.output_dir

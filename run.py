@@ -10,6 +10,7 @@ import random
 from torchvision import transforms
 import sys
 import time
+from tqdm import tqdm
 
 from constants import *
 from utils import *
@@ -35,11 +36,9 @@ def train(args):
 	model = load_model(args)
 	model.train()
 	if HAVE_CUDA:
-		model.cuda()
+		model = model.cuda()
 	criterion = nn.CrossEntropyLoss()
 	optimizer = load_optimizer(args,model)
-	if HAVE_CUDA:
-		criterion = criterion.cuda()
 	
 	# log info
 	prepare_env(args)
@@ -48,8 +47,10 @@ def train(args):
 	for i in range(args.num_epochs):
 		
 		# run model
-		model, optimizer, present_train_loss = train_epoch(args,train_data,model,optimizer,criterion)
-		present_validation_loss = get_validation_loss(args,validation_data,model,criterion)
+		print "==========================================================================================="
+		print "Epoch(",i,"/",args.num_epochs,")"
+		model, optimizer, present_train_loss, train_accuracy = train_epoch(args,train_data,model,optimizer,criterion)
+		present_validation_loss, validation_accuracy = get_validation_loss(args,validation_data,model,criterion)
 		save_data(args,model,optimizer)
 		if present_validation_loss<best_validation_loss:
 			save_data(args,model,optimizer,True)
@@ -59,10 +60,16 @@ def train(args):
 		end_time = time.time()
 		epoch_duration = end_time-epoch_start_time
 		epoch_start_time = end_time
-		print "==========================================================================================="
-		print "Epoch(",i,"/",args.num_epochs,") Duration: ", epoch_duration
-		print "Training Loss", present_train_loss
-		print "Validation Loss", present_validation_loss
+		print "Duration: ", epoch_duration
+		print ""
+		print "Loss:"
+		print "Training  ", present_train_loss
+		print "Validation", present_validation_loss
+		print ""
+		print "Accuracy:"
+		print "Training  ", train_accuracy
+		print "Validation", validation_accuracy
+		print ""
 		print "Best Epoch", best_epoch
 		###################################################################################################
 		# break
@@ -84,6 +91,8 @@ def test(args,best=True,criterion=nn.CrossEntropyLoss()):
 	all_datasets = dataReader(args)
 	test_data = all_datasets['test']
 	model = load_model(args)
+	if HAVE_CUDA:
+		model = model.cuda()
 	test_loss = get_validation_loss(args,test_data,model,criterion)
 	print test_loss
 
@@ -94,9 +103,10 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 	model.train()
 	total_training_loss = 0.0
 	num_batches = 0
-	for i, batch in enumerate(iterator):
+	accuracy = 0
+	for batch in tqdm(iterator):
 		if HAVE_CUDA:
-			batch.cuda()
+			batch = batch.cuda()
 		optimizer.zero_grad()
 
 		# Forward pass
@@ -107,19 +117,24 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 		#Backward pass
 		loss = criterion(pred_labels,batch_labels)
 		loss.backward()
-		total_training_loss += loss.data.cpu().numpy()
+		total_training_loss += loss.data.cpu().numpy()[0]
 		# print total_training_loss
+		temp_accuracy = get_metrics(pred_labels,batch_labels)
+		accuracy += temp_accuracy
 
 		#Optimize
 		optimizer.step()
 		num_batches += 1
 
 		#Log info
-		if (i+1)%args.save_every == 0:
+		if (num_batches)%args.save_every == 0:
 			save_data(args,model,optimizer)
+		print "Loss:", loss.data[0], " Accuracy:", temp_accuracy
 
+	total_training_loss /= num_batches
+	accuracy /= num_batches
 
-	return model, optimizer, total_training_loss/(num_batches*args.batch_size)
+	return model, optimizer, total_training_loss, accuracy
 
 def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
 	model.eval()
@@ -128,7 +143,7 @@ def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
 	accuracy = 0
 	for i, batch in enumerate(iterator):
 		if HAVE_CUDA:
-			batch.cuda()
+			batch = batch.cuda()
 		batch_data = ag.Variable(batch[0].float())
 		batch_labels = ag.Variable(batch[1].long())
 		pred_labels = model(batch_data)
@@ -136,9 +151,13 @@ def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
 
 		#Backward pass
 		loss = criterion(pred_labels,batch_labels)
-		total_validation_loss += loss.data.cpu().numpy()
-		print "accuracy", get_metrics(pred_labels,batch_labels)
+		total_validation_loss += loss.data.cpu().numpy()[0]
+		# print "accuracy", get_metrics(pred_labels,batch_labels)
 		num_batches += 1
+		temp_accuracy = get_metrics(pred_labels,batch_labels)
+		accuracy += temp_accuracy
 		# print total_validation_loss
+	total_validation_loss /= num_batches
+	accuracy /= num_batches
 
-	return total_validation_loss/(num_batches*args.batch_size)
+	return total_validation_loss, accuracy
