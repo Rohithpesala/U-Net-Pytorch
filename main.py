@@ -65,8 +65,10 @@ def main():
 		validation(args)
 	elif args.mode == "test":
 		test(args)
-	else:
+	elif args.mode == "train":
 		train(args)
+	else:
+		dtrain2(args)
 
 def check(args):
 	data = dataReader(args)

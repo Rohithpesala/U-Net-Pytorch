@@ -15,6 +15,24 @@ from constants import *
 if HAVE_CUDA:
 	import torch.cuda as cuda
 
+class dummy(nn.Module):
+	"""docstring for dummy"""
+	def __init__(self, inp):
+		super(dummy, self).__init__()
+		self.l1 = nn.Linear(inp,inp)
+	def forward(self, inp):
+		return self.l1(inp)
+
+class dummyconv(nn.Module):
+	"""docstring for dummyconv"""
+	def __init__(self, inp_channels):
+		super(dummyconv, self).__init__()
+		self.inp_channels = inp_channels
+		self.conv = nn.Conv2d(inp_channels,inp_channels,1,1)
+
+	def forward(self,images):
+		return self.conv(images)
+
 
 class FeedForward(nn.Module):
 	"""docstring for FeedForward"""
@@ -26,8 +44,9 @@ class FeedForward(nn.Module):
 
 class UNet(nn.Module):
 	"""docstring for JointNet"""
-	def __init__(self, k_size = 3, p_size = 2, num_classes=2, pad_type="reflect"):
+	def __init__(self, k_size = 3, p_size = 2, num_classes=2, pad_type="zero"):
 		super(UNet, self).__init__()
+		print("mine")
 		self.kernel_size = k_size
 		self.pool_size = p_size
 		self.num_classes = num_classes
@@ -184,7 +203,8 @@ class UNet(nn.Module):
 		in_1 = torch.cat((out1,in_down_1),1)
 		in_1 = self.upseq1(in_1)
 
-		final_out = self.soft(self.final_layer(in_1))
+		# final_out = self.soft(self.final_layer(in_1))
+		final_out = self.final_layer(in_1)
 		
 		return final_out
 

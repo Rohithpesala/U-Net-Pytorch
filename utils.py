@@ -24,13 +24,12 @@ if HAVE_CUDA:
 def get_metrics(pred,truth):
 	# calculate IOU and other metrics required
 	_, pred = torch.max(pred,1)
-	total_count = 1
+	total_count = 1.0
 	for i in truth.size():
 		total_count *= i
-	correct_count = torch.sum(pred == truth).float()
+	correct_count = torch.sum(pred.data == truth.data)
 	accuracy = correct_count/total_count
-	# print correct_count, total_count
-	return accuracy.data[0]
+	return accuracy
 
 def prepare_env(args):
 	output_dir = args.output_dir

@@ -14,12 +14,76 @@ from tqdm import tqdm
 
 from constants import *
 from utils import *
-from model import UNet
 from dataReader import *
 
 
 if HAVE_CUDA:
 	import torch.cuda as cuda
+
+def dtrain(args):
+	train_data = torch.randn(32,20).float()
+	# print train_data.requires_grad
+	model = dummy(20)
+	criterion = nn.MSELoss()
+	optimizer = optim.Adam(model.parameters(),lr=0.01)
+	for i in range(10000):
+		model, optimizer, present_train_loss = dtrain_epoch(args,train_data,model,optimizer,criterion)
+		
+	print train_data
+	print model(ag.Variable(train_data))
+
+def dtrain_epoch(args, data, model, optimizer, criterion):
+	optimizer.zero_grad()
+	data = ag.Variable(data)
+	pred_labels = model(data)
+	loss = criterion(pred_labels,data)
+	loss.backward()
+	total_training_loss = loss.data.cpu().numpy()[0]
+	optimizer.step()
+
+	return model, optimizer, total_training_loss
+
+def dtrain2(args):
+	# Dataset loading and preparing env
+	all_datasets = dataReader(args)
+	train_data = all_datasets['train']
+	validation_data = all_datasets['validation']
+	model = UNet(num_classes=3)
+	# model = UNetj(3, 3)
+	# model = UNetm(3,3)
+	for batch in train_data:
+		print batch[0][0]
+		print model(ag.Variable(batch[0].float()))[0][0][0:5]
+		# print model(ag.Variable(batch[0].float()))[1][0][0][0:5]
+		break
+	criterion = nn.MSELoss()
+	optimizer = optim.Adam(model.parameters(),lr=0.01)
+	for i in range(100):
+		model, optimizer, present_train_loss = dtrain_epoch2(args,train_data,model,optimizer,criterion)
+		if i%10 == 0:
+			print "Loss", present_train_loss
+	for batch in train_data:
+		print batch[0][0]
+		print model(ag.Variable(batch[0].float()))[0][0][0:5]
+		break
+
+def dtrain_epoch2(args, iterator, model, optimizer, criterion):
+	total_training_loss = 0.0
+	num_batches = 0
+	for batch in tqdm(iterator):
+		optimizer.zero_grad()
+		batch_data = ag.Variable(batch[0].float())
+		pred_labels = model(batch_data)
+		# print torch.min(batch_labels.view(-1))
+		#Backward pass
+		loss = criterion(pred_labels,batch_data)
+		loss.backward()
+		total_training_loss += loss.data.cpu().numpy()[0]
+		# print total_training_loss
+		optimizer.step()
+		num_batches += 1
+
+	return model, optimizer, total_training_loss
 
 def train(args):
 	
