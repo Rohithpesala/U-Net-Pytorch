@@ -15,6 +15,9 @@ from torchvision import transforms
 import sys
 import time
 
+from scipy.io import loadmat
+from scipy.misc import *
+
 from constants import *
 from model import UNet
 
