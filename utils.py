@@ -25,7 +25,7 @@ colors = loadmat('./mapping.mat')
 colorsCity = colors['cityscapesMap']*255
 nclasses = 35
 labelCol = dict(zip(range(nclasses), colorsCity))
-
+count = 0
 if HAVE_CUDA:
 	import torch.cuda as cuda
 
@@ -97,9 +97,9 @@ def save_data(args,model,optimizer,best = False):
 	save_model(args,model,best)
 	save_optimizer(args,optimizer,best)
 
-def getgta5List(rootdir='.',suffix='',label=False):
+def getList(rootdir='.',suffix='',label=False):
 	if label == True:
-		return [os.path.join(looproot, filename)
+		return[os.path.join(looproot, filename)
 			for looproot, _, filenames in os.walk(rootdir)
 			for filename in filenames if filename.endswith(suffix)]
 	else:
@@ -125,7 +125,9 @@ def decode_labels(temp):
 	rgb[:, :, 2] = blue
 	return rgb
 
-def reconstruct(lbl):
-	lbl = decode_labels(lbl.numpy())
-	imsave("./lable.png",lbl)
+def reconstruct(lbl_batches):
+	global count
+	for lbl in lbl_batches:
+		lbl1 = decode_labels(lbl.numpy())
+		imsave("./lable"+count+".png",lbl1)
 
