@@ -36,6 +36,8 @@ def get_metrics(pred,truth):
 	for i in truth.size():
 		total_count *= i
 	correct_count = torch.sum(pred.data == truth.data)
+	if pred.is_cuda:
+		correct_count = correct_count.cpu().numpy()
 	accuracy = correct_count/total_count
 	return accuracy
 
@@ -59,23 +61,28 @@ def load_model(args):
 	if os.path.isdir(save_path):
 		#load checkpoint
 		filename = os.path.join(save_path,"last_checkpoint")
-		print "model load"
-		return torch.load(filename)
+		try:
+			print "model load"
+			return torch.load(filename)
+		except Exception as e:
+			pass		
+	if args.model_type == "unet":
+		return UNet(args.kernel_size,args.pool_size,args.num_classes,args.pad_type)
+	elif args.model_type == "mlp":
+		return MLP(args.num_classes,args.pad_type)
 	else:
-		if args.model_type == "unet":
-			return UNet(args.kernel_size,args.pool_size,args.num_classes,args.pad_type)
-		elif args.model_type == "mlp":
-			return MLP(args.num_classes,args.pad_type)
-		else:
-			raise ValueError("model is not unet or mlp. Please specify correct model type")
+		raise ValueError("model is not unet or mlp. Please specify correct model type")
 
 def load_optimizer(args, model):
 	optimizer = optim.Adam(model.parameters(), lr=0.01)
 	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save")
 	if os.path.isdir(save_path):
 		filename = os.path.join(save_path,"last_checkpoint_optim")
-		print "optim_load"
-		optimizer.load_state_dict(torch.load(filename))
+		try:
+			print "optim_load"
+			optimizer.load_state_dict(torch.load(filename))
+		except Exception as e:
+			pass		
 	return optimizer
 
 def save_model(args,model,best=False):
@@ -83,7 +90,7 @@ def save_model(args,model,best=False):
 	if best:
 		checkpoint_name = "best_checkpoint"
 	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
-	torch.save(model.cpu(),save_path)
+	torch.save(model,save_path)
 
 def save_optimizer(args,optimizer,best=False):
 	checkpoint_name = "last_checkpoint_optim"
@@ -131,3 +138,6 @@ def reconstruct(lbl_batches):
 		lbl1 = decode_labels(lbl.numpy())
 		imsave("./lable"+count+".png",lbl1)
 
+def output_args(args):
+	for arg in vars(args):
+		print "%20s"%arg,"------", getattr(args,arg)

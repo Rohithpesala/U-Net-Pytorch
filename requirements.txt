@@ -1,0 +1,1 @@
+pillow, torch, torchvision, tqdm, sklearn, numpy, scipy
