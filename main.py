@@ -25,7 +25,7 @@ if HAVE_CUDA:
 def get_args():
     parser = argparse.ArgumentParser()
     home = os.path.expanduser("~")
-    data_type = "gta5"
+    data_type = "joint"
     mode = "train"
     output_dir = "outputs/"
     num_classes = 2
@@ -42,8 +42,8 @@ def get_args():
     parser.add_argument('-b', "--batch_size", default=4, type=int)
     parser.add_argument('-l', "--model_type", default="unet")
     parser.add_argument('-s', "--save_every", default=100, type=int)
-    parser.add_argument('-i', "--run_id", default="00")
-    parser.add_argument('-a', "--data_dir", default="data/gta5-dummy")
+    parser.add_argument('-i', "--run_id", default="02")
+    parser.add_argument('-a', "--data_dir", default="data/")
     parser.add_argument('-g', "--image_height", default=256, type=int)
     parser.add_argument('-w', "--image_width", default=512, type=int)
     parser.add_argument('-f', "--shuffle", default=True, type=bool)
