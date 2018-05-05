@@ -106,6 +106,10 @@ def train(args):
 	
 	# log info
 	prepare_env(args)
+	output_args(args)
+	loss_vals = []
+	train_acc_vals = []
+	val_acc_vals = []
 	train_start_time = time.time()
 	epoch_start_time = train_start_time
 	for i in range(args.num_epochs):
@@ -113,8 +117,11 @@ def train(args):
 		# run model
 		print "==========================================================================================="
 		print "Epoch(",i,"/",args.num_epochs,")"
-		model, optimizer, present_train_loss, train_accuracy = train_epoch(args,train_data,model,optimizer,criterion)
+		model, optimizer, present_train_loss, train_accuracy, train_loss_vals = train_epoch(args,train_data,model,optimizer,criterion)
+		loss_vals.extend(train_loss_vals)
 		present_validation_loss, validation_accuracy = get_validation_loss(args,validation_data,model,criterion)
+		train_acc_vals.append(train_accuracy)
+		val_acc_vals.append(validation_accuracy)
 		save_data(args,model,optimizer)
 		if present_validation_loss<best_validation_loss:
 			save_data(args,model,optimizer,True)
@@ -137,7 +144,15 @@ def train(args):
 		print "Best Epoch", best_epoch
 		###################################################################################################
 		# break
-
+	loss_vals = np.squeeze(np.array(loss_vals))
+	train_acc_vals = np.squeeze(np.array(train_acc_vals))
+	val_acc_vals = np.squeeze(np.array(val_acc_vals))
+	loss_save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save","loss")
+	np.save(loss_save_path,loss_vals)
+	train_save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save","train_accuracy")
+	np.save(train_save_path,train_acc_vals)
+	val_save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save","val_accuracy")
+	np.save(val_save_path,val_acc_vals)
 	total_training_time = time.time()-train_start_time
 	print "Total training time: ", total_training_time
 
@@ -168,6 +183,7 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 	total_training_loss = 0.0
 	num_batches = 0
 	accuracy = 0
+	loss_vals = []
 	for batch in tqdm(iterator):
 		if HAVE_CUDA:
 			batch[0],batch[1] = batch[0].cuda(),batch[1].cuda()
@@ -182,6 +198,7 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 		loss = criterion(pred_labels,batch_labels)
 		loss.backward()
 		total_training_loss += loss.data.cpu().numpy()
+		loss_vals.append(loss.data.cpu().numpy())
 		# print total_training_loss
 		temp_accuracy = get_metrics(pred_labels,batch_labels)
 		accuracy += temp_accuracy
@@ -198,7 +215,7 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 	total_training_loss /= num_batches
 	accuracy /= num_batches
 
-	return model, optimizer, total_training_loss, accuracy
+	return model, optimizer, total_training_loss, accuracy,loss_vals
 
 def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
 	model.eval()
