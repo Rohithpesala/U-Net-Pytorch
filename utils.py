@@ -15,8 +15,16 @@ from torchvision import transforms
 import sys
 import time
 
+from scipy.io import loadmat
+from scipy.misc import *
+
 from constants import *
 from model import UNet
+
+colors = loadmat('./mapping.mat')
+colorsCity = colors['cityscapesMap']*255
+nclasses = 35
+labelCol = dict(zip(range(nclasses), colorsCity))
 
 if HAVE_CUDA:
 	import torch.cuda as cuda
@@ -102,4 +110,22 @@ def getgta5List(rootdir='.',suffix='',label=False):
 def splitData(labelIds,images):
 	train_images,test_images,train_labels,test_labels = train_test_split(images,labelIds,test_size=0.2,random_state=42)
    	return train_labels,train_images,test_labels,test_images
+
+def decode_labels(temp):
+	red = temp.copy()
+	green = temp.copy()
+	blue = temp.copy()
+	for l in range(0,nclasses):
+	    red[temp == l] = labelCol[l][0]
+	    green[temp == l] = labelCol[l][1]
+	    blue[temp == l] = labelCol[l][2]
+	rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
+	rgb[:, :, 0] = red 
+	rgb[:, :, 1] = green 
+	rgb[:, :, 2] = blue
+	return rgb
+
+def reconstruct(lbl):
+	lbl = decode_labels(lbl.numpy())
+	imsave("./lable.png",lbl)
 
