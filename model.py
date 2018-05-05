@@ -44,12 +44,14 @@ class FeedForward(nn.Module):
 
 class UNet(nn.Module):
 	"""docstring for JointNet"""
-	def __init__(self, k_size = 3, p_size = 2, num_classes=2, pad_type="zero"):
+	def __init__(self, k_size = 3, p_size = 2, num_classes=2, pad_type="zero",dropout = 0.0):
 		super(UNet, self).__init__()
 		print("mine")
 		self.kernel_size = k_size
 		self.pool_size = p_size
 		self.num_classes = num_classes
+		self.dropout = dropout
+		self.drop_layer = nn.Dropout(p=self.dropout)
 		if pad_type == "reflect":
 			pad_layer = nn.ReflectionPad2d((k_size-1)/2)
 		else:
@@ -61,11 +63,13 @@ class UNet(nn.Module):
 		pad_layer,
 		nn.BatchNorm2d(64),
 		nn.ReLU(True),
+		self.drop_layer,
 
 		nn.Conv2d(in_channels=64, out_channels=64, kernel_size=k_size, stride=1),
 		pad_layer,
 		nn.BatchNorm2d(64),
 		nn.ReLU(True),
+		self.drop_layer,
 		)
 
 		self.seq2 = nn.Sequential(
@@ -73,11 +77,13 @@ class UNet(nn.Module):
 		pad_layer,
 		nn.BatchNorm2d(128),
 		nn.ReLU(True),
+		self.drop_layer,
 
 		nn.Conv2d(in_channels=128, out_channels=128, kernel_size=k_size, stride=1),
 		pad_layer,
 		nn.BatchNorm2d(128),
 		nn.ReLU(True),
+		self.drop_layer,
 		)
 
 		self.seq3 = nn.Sequential(
@@ -85,11 +91,13 @@ class UNet(nn.Module):
 		pad_layer,
 		nn.BatchNorm2d(256),
 		nn.ReLU(True),
+		self.drop_layer,
 
 		nn.Conv2d(in_channels=256, out_channels=256, kernel_size=k_size, stride=1),
 		pad_layer,
 		nn.BatchNorm2d(256),
 		nn.ReLU(True),
+		self.drop_layer,
 		)
 
 		self.seq4 = nn.Sequential(
@@ -97,11 +105,13 @@ class UNet(nn.Module):
 		pad_layer,
 		nn.BatchNorm2d(512),
 		nn.ReLU(True),
+		self.drop_layer,
 
 		nn.Conv2d(in_channels=512, out_channels=512, kernel_size=k_size, stride=1),
 		pad_layer,
 		nn.BatchNorm2d(512),
 		nn.ReLU(True),
+		self.drop_layer,
 		)
 
 		self.bot = nn.Sequential(

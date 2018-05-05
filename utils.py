@@ -67,14 +67,14 @@ def load_model(args):
 		except Exception as e:
 			pass		
 	if args.model_type == "unet":
-		return UNet(args.kernel_size,args.pool_size,args.num_classes,args.pad_type)
+		return UNet(args.kernel_size,args.pool_size,args.num_classes,args.pad_type,dropout = args.dropout)
 	elif args.model_type == "mlp":
 		return MLP(args.num_classes,args.pad_type)
 	else:
 		raise ValueError("model is not unet or mlp. Please specify correct model type")
 
 def load_optimizer(args, model):
-	optimizer = optim.Adam(model.parameters(), lr=0.01)
+	optimizer = optim.Adam(model.parameters(), lr=0.01,weight_decay = args.weight_decay)
 	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save")
 	if os.path.isdir(save_path):
 		filename = os.path.join(save_path,"last_checkpoint_optim")
@@ -137,5 +137,8 @@ def reconstruct(lbl):
 	imsave("./lable.png",lbl)
 
 def output_args(args):
+	file_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"log","params.txt")
+	log_file = open(file_path,"w")
 	for arg in vars(args):
 		print "%20s"%arg,"------", getattr(args,arg)
+		print >> log_file,"%20s"%arg,"------", getattr(args,arg)
