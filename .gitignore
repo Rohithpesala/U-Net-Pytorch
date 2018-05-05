@@ -1,6 +1,8 @@
 *.pyc
 *.ipynb
 data/*
-outputs/*
+output*/*
 VOCdevkit/*
 run.sh
+Experiments/*
+myenv/*

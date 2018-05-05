@@ -28,7 +28,7 @@ def get_metrics(pred,truth):
 	for i in truth.size():
 		total_count *= i
 	correct_count = torch.sum(pred.data == truth.data)
-	accuracy = correct_count/total_count
+	accuracy = correct_count.cpu().numpy()/total_count
 	return accuracy
 
 def prepare_env(args):
@@ -75,7 +75,7 @@ def save_model(args,model,best=False):
 	if best:
 		checkpoint_name = "best_checkpoint"
 	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
-	torch.save(model.cpu(),save_path)
+	torch.save(model,save_path)
 
 def save_optimizer(args,optimizer,best=False):
 	checkpoint_name = "last_checkpoint_optim"

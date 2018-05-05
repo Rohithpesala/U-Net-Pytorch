@@ -170,7 +170,7 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 	accuracy = 0
 	for batch in tqdm(iterator):
 		if HAVE_CUDA:
-			batch = batch.cuda()
+			batch[0],batch[1] = batch[0].cuda(),batch[1].cuda()
 		optimizer.zero_grad()
 
 		# Forward pass
@@ -181,7 +181,7 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 		#Backward pass
 		loss = criterion(pred_labels,batch_labels)
 		loss.backward()
-		total_training_loss += loss.data.cpu().numpy()[0]
+		total_training_loss += loss.data.cpu().numpy()
 		# print total_training_loss
 		temp_accuracy = get_metrics(pred_labels,batch_labels)
 		accuracy += temp_accuracy
@@ -193,7 +193,7 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 		#Log info
 		if (num_batches)%args.save_every == 0:
 			save_data(args,model,optimizer)
-		print "Loss:", loss.data[0], " Accuracy:", temp_accuracy
+		print "Loss:", loss.data.cpu().numpy(), " Accuracy:", temp_accuracy
 
 	total_training_loss /= num_batches
 	accuracy /= num_batches
@@ -207,7 +207,7 @@ def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
 	accuracy = 0
 	for i, batch in enumerate(iterator):
 		if HAVE_CUDA:
-			batch = batch.cuda()
+			batch[0],batch[1] = batch[0].cuda(),batch[1].cuda()
 		batch_data = ag.Variable(batch[0].float())
 		batch_labels = ag.Variable(batch[1].long())
 		pred_labels = model(batch_data)
@@ -215,7 +215,7 @@ def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
 
 		#Backward pass
 		loss = criterion(pred_labels,batch_labels)
-		total_validation_loss += loss.data.cpu().numpy()[0]
+		total_validation_loss += loss.data.cpu().numpy()
 		# print "accuracy", get_metrics(pred_labels,batch_labels)
 		num_batches += 1
 		temp_accuracy = get_metrics(pred_labels,batch_labels)
