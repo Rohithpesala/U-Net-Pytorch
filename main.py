@@ -25,7 +25,8 @@ if HAVE_CUDA:
 def get_args():
     parser = argparse.ArgumentParser()
     home = os.path.expanduser("~")
-    data_type = "gta5"
+    data_type = "cityscape"
+
     mode = "train"
     output_dir = "outputs/"
     num_classes = 2
