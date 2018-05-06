@@ -29,7 +29,7 @@ count = 0
 if HAVE_CUDA:
 	import torch.cuda as cuda
 
-def get_metrics(pred,truth,infer=False):
+def get_metrics(args,pred,truth,infer=False):
 	# calculate IOU and other metrics required
 	_, pred = torch.max(pred,1)
 	total_count = 1.0
@@ -41,7 +41,44 @@ def get_metrics(pred,truth,infer=False):
 	if pred.is_cuda:
 		correct_count = correct_count.cpu().numpy()
 	accuracy = correct_count/total_count
-	return accuracy
+	IoU = compute_iou_batch(args,pred.data,truth.data)
+	# print IoU
+	return accuracy,IoU
+
+def compute_iou_batch(args,pred,truth):
+	iou = 0.0
+	for i in range(pred.size()[0]):
+		iou +=compute_iou_single(args,pred[i],truth[i])
+	return iou/pred.size()[0]
+
+def compute_iou_single(args,pred,truth):
+	iou = 0.0
+	# print pred
+	# tot_c = 0
+	for i in range(args.num_classes):
+		pred_i = pred == i
+		truth_i = truth == i
+		# int_i = pred_i == truth_i
+		# pred_i = pred_i.bool()
+		# print type(pred_i)
+		# print "pred",torch.sum(pred_i)
+		# print "truth",torch.sum(truth_i)
+		# print "int",torch.sum(int_i)
+		tp = torch.sum((pred_i + truth_i) == 2)
+		fpn = torch.sum((pred_i + truth_i) == 1)
+		# print fpn,tp
+		# tot_c+=torch.sum(pred_i)
+		if pred.is_cuda:
+			tp = tp.cpu().numpy()
+			fpn = fpn.cpu().numpy()
+		try:
+			iou_temp = tp*1.0/(tp+fpn)
+		except Exception as e:
+			iou_temp = 0.0
+		# print iou_temp
+		iou += iou_temp
+	# print "==========", tot_c
+	return iou/args.num_classes
 
 def prepare_env(args):
 	output_dir = args.output_dir

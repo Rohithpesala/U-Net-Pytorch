@@ -110,6 +110,8 @@ def train(args):
 	loss_vals = []
 	train_acc_vals = []
 	val_acc_vals = []
+	train_iou_vals = []
+	val_iou_vals = []
 	train_start_time = time.time()
 	epoch_start_time = train_start_time
 	for i in range(args.num_epochs):
@@ -117,11 +119,13 @@ def train(args):
 		# run model
 		print "==========================================================================================="
 		print "Epoch(",i,"/",args.num_epochs,")"
-		model, optimizer, present_train_loss, train_accuracy, train_loss_vals = train_epoch(args,train_data,model,optimizer,criterion)
+		model, optimizer, present_train_loss, train_accuracy, train_iou ,train_loss_vals = train_epoch(args,train_data,model,optimizer,criterion)
 		loss_vals.extend(train_loss_vals)
-		present_validation_loss, validation_accuracy = get_validation_loss(args,validation_data,model,criterion)
+		present_validation_loss, validation_accuracy, validation_iou = get_validation_loss(args,validation_data,model,criterion)
 		train_acc_vals.append(train_accuracy)
 		val_acc_vals.append(validation_accuracy)
+		train_iou_vals.append(train_iou)
+		val_iou_vals.append(validation_iou)
 		save_data(args,model,optimizer)
 		if present_validation_loss<best_validation_loss:
 			save_data(args,model,optimizer,True)
@@ -141,6 +145,10 @@ def train(args):
 		print "Training  ", train_accuracy
 		print "Validation", validation_accuracy
 		print ""
+		print "IoU:"
+		print "Training  ", train_iou
+		print "Validation", validation_iou
+		print ""
 		print "Best Epoch", best_epoch
 		###################################################################################################
 		# break
@@ -155,6 +163,10 @@ def train(args):
 	np.save(train_save_path,train_acc_vals)
 	val_save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save","val_accuracy")
 	np.save(val_save_path,val_acc_vals)
+	train_save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save","train_iou")
+	np.save(train_save_path,train_iou_vals)
+	val_save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save","val_iou")
+	np.save(val_save_path,val_iou_vals)
 	total_training_time = time.time()-train_start_time
 	print "Total training time: ", total_training_time
 
@@ -185,6 +197,7 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 	total_training_loss = 0.0
 	num_batches = 0
 	accuracy = 0
+	iou = 0.0
 	loss_vals = []
 	for batch in tqdm(iterator):
 		if HAVE_CUDA:
@@ -202,8 +215,9 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 		total_training_loss += loss.data.cpu().numpy()
 		loss_vals.append(loss.data.cpu().numpy())
 		# print total_training_loss
-		temp_accuracy = get_metrics(pred_labels,batch_labels)
+		temp_accuracy,temp_iou = get_metrics(args,pred_labels,batch_labels)
 		accuracy += temp_accuracy
+		iou += temp_iou
 
 		#Optimize
 		optimizer.step()
@@ -212,17 +226,19 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 		#Log info
 		if (num_batches)%args.save_every == 0:
 			save_data(args,model,optimizer)
-		print "Loss:", loss.data.cpu().numpy(), " Accuracy:", temp_accuracy
+		print "Loss:", loss.data.cpu().numpy(), " Accuracy:", temp_accuracy, " IoU:", temp_iou
 
 	total_training_loss /= num_batches
 	accuracy /= num_batches
+	iou /= num_batches
 
-	return model, optimizer, total_training_loss, accuracy,loss_vals
+	return model, optimizer, total_training_loss, accuracy,iou,loss_vals
 
 def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss(),infer=False):
 	model.eval()
 	total_validation_loss = 0.0
 	num_batches = 0
+	iou = 0.0
 	accuracy = 0
 	if len(iterator)==0:
 		return total_validation_loss, accuracy
@@ -239,16 +255,18 @@ def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss(),infe
 		total_validation_loss += loss.data.cpu().numpy()
 		# print "accuracy", get_metrics(pred_labels,batch_labels)
 		num_batches += 1
-		temp_accuracy = get_metrics(pred_labels,batch_labels,infer)
+		temp_accuracy,temp_iou = get_metrics(args,pred_labels,batch_labels,infer)
 		accuracy += temp_accuracy
+		iou += temp_iou
 		# print total_validation_loss
 	try:
 		total_validation_loss /= num_batches
 		accuracy /= num_batches
+		iou /= num_batches
 	except Exception as e:
 		pass
 
-	return total_validation_loss, accuracy
+	return total_validation_loss, accuracy,iou
 
 def infer(args,best = True, criterion=nn.CrossEntropyLoss()):
 	data_dir = args.data_dir
