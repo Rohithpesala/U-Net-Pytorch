@@ -36,7 +36,7 @@ def get_metrics(args,pred,truth,infer=False):
 	for i in truth.size():
 		total_count *= i
 	if infer:
-		reconstruct(pred.data)
+		reconstruct(pred.data.cpu())
 	correct_count = torch.sum(pred.data == truth.data)
 	if pred.is_cuda:
 		correct_count = correct_count.cpu().numpy()
@@ -66,8 +66,8 @@ def compute_iou_single(args,pred,truth):
 		# print "int",torch.sum(int_i)
 		tp = torch.sum((pred_i + truth_i) == 2)
 		fpn = torch.sum((pred_i + truth_i) == 1)
-		print "========"
-		print fpn,tp
+		#print "========"
+		#print fpn,tp
 		# tot_c+=torch.sum(pred_i)
 		if pred.is_cuda:
 			tp = tp.cpu().numpy()
@@ -76,10 +76,10 @@ def compute_iou_single(args,pred,truth):
 			iou_temp = tp*1.0/(tp+fpn)
 		else:
 			iou_temp = 0.0
-		print iou_temp
+		#print iou_temp
 		iou += iou_temp
 	# print "==========", tot_c
-	print iou
+	#print iou
 	return iou/args.num_classes
 
 def prepare_env(args):
@@ -189,7 +189,7 @@ def reconstruct(lbl_batches):
 	for lbl in lbl_batches:
 		# print lbl,lbl[0:2]
 		lbl1 = decode_labels(lbl.numpy())
-		imsave("./lable"+str(count)+".png",lbl1)
+		imsave("./inferred/lable"+str(count)+".png",lbl1)
 		count += 1
 
 def output_args(args):

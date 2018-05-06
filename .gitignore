@@ -6,3 +6,5 @@ VOCdevkit/*
 run.sh
 Experiments/*
 myenv/*
+inferred/*
+infer_data/*

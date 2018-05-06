@@ -294,11 +294,11 @@ def infer(args,best = True, criterion=nn.CrossEntropyLoss()):
 	model = load_model(args)
 	if HAVE_CUDA:
 		model = model.cuda()
-	loss,accuracy = get_validation_loss(args,train_data,model,criterion,infer = True)
-	print loss, accuracy
-	loss,accuracy = get_validation_loss(args,val_data,model,criterion,infer = True)
-	print loss, accuracy
-	loss,accuracy = get_validation_loss(args,test_data,model,criterion,infer = True)
-	print loss, accuracy
+	loss,accuracy,iou = get_validation_loss(args,train_data,model,criterion,infer = True)
+	print loss, accuracy,iou
+	loss,accuracy,iou = get_validation_loss(args,val_data,model,criterion,infer = True)
+	print loss, accuracy,iou
+	loss,accuracy,iou = get_validation_loss(args,test_data,model,criterion,infer = True)
+	print loss, accuracy,iou
 	
 	return loss
