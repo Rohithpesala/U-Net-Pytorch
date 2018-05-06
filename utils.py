@@ -29,12 +29,14 @@ count = 0
 if HAVE_CUDA:
 	import torch.cuda as cuda
 
-def get_metrics(pred,truth):
+def get_metrics(pred,truth,infer=False):
 	# calculate IOU and other metrics required
 	_, pred = torch.max(pred,1)
 	total_count = 1.0
 	for i in truth.size():
 		total_count *= i
+	if infer:
+		reconstruct(pred.data)
 	correct_count = torch.sum(pred.data == truth.data)
 	if pred.is_cuda:
 		correct_count = correct_count.cpu().numpy()
@@ -67,14 +69,14 @@ def load_model(args):
 		except Exception as e:
 			pass		
 	if args.model_type == "unet":
-		return UNet(args.kernel_size,args.pool_size,args.num_classes,args.pad_type)
+		return UNet(args.kernel_size,args.pool_size,args.num_classes,args.pad_type,dropout = args.dropout)
 	elif args.model_type == "mlp":
 		return MLP(args.num_classes,args.pad_type)
 	else:
 		raise ValueError("model is not unet or mlp. Please specify correct model type")
 
 def load_optimizer(args, model):
-	optimizer = optim.Adam(model.parameters(), lr=0.01)
+	optimizer = optim.Adam(model.parameters(), lr=0.01,weight_decay = args.weight_decay)
 	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save")
 	if os.path.isdir(save_path):
 		filename = os.path.join(save_path,"last_checkpoint_optim")
@@ -129,6 +131,7 @@ def splitData(labelIds,images):
    	return train_labels,train_images,test_labels,test_images
 
 def decode_labels(temp):
+	temp=np.transpose(temp,[1,0])
 	red = temp.copy()
 	green = temp.copy()
 	blue = temp.copy()
@@ -145,9 +148,20 @@ def decode_labels(temp):
 def reconstruct(lbl_batches):
 	global count
 	for lbl in lbl_batches:
+		# print lbl,lbl[0:2]
 		lbl1 = decode_labels(lbl.numpy())
-		imsave("./lable"+count+".png",lbl1)
+		imsave("./lable"+str(count)+".png",lbl1)
+		count += 1
 
 def output_args(args):
+	file_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"log","params.txt")
+	log_file = open(file_path,"w")
 	for arg in vars(args):
 		print "%20s"%arg,"------", getattr(args,arg)
+		print >> log_file,"%20s"%arg,"------", getattr(args,arg)
+
+def load_args(args,params):
+	for arg in vars(args):
+		value = type(getattr(args,arg))(params[arg])
+		setattr(args,arg,value) 
+	# return args

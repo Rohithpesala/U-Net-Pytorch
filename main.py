@@ -26,6 +26,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     home = os.path.expanduser("~")
     data_type = "cityscape"
+
     mode = "train"
     output_dir = "outputs/"
     num_classes = 2
@@ -37,6 +38,8 @@ def get_args():
     parser.add_argument('-k', "--kernel_size", default=3, type=int)
     parser.add_argument('-t', "--pad_type", default="reflect")
     parser.add_argument('-e', "--num_epochs", default=10, type=int)
+    parser.add_argument("--weight_decay", default=0.0, type=float)
+    parser.add_argument("--dropout", default=0.0, type=float)
     parser.add_argument('-b', "--batch_size", default=4, type=int)
     parser.add_argument('-l', "--model_type", default="unet")
     parser.add_argument('-s', "--save_every", default=100, type=int)
@@ -67,6 +70,8 @@ def main():
 		test(args)
 	elif args.mode == "train":
 		train(args)
+	elif args.mode == "infer":
+		infer(args)
 	else:
 		dtrain2(args)
 

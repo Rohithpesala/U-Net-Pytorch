@@ -144,6 +144,8 @@ def train(args):
 		print "Best Epoch", best_epoch
 		###################################################################################################
 		# break
+	save_data(args,model.cpu(),optimizer)
+
 	loss_vals = np.squeeze(np.array(loss_vals))
 	train_acc_vals = np.squeeze(np.array(train_acc_vals))
 	val_acc_vals = np.squeeze(np.array(val_acc_vals))
@@ -172,8 +174,8 @@ def test(args,best=True,criterion=nn.CrossEntropyLoss()):
 	model = load_model(args)
 	if HAVE_CUDA:
 		model = model.cuda()
-	test_loss = get_validation_loss(args,test_data,model,criterion)
-	print test_loss
+	test_loss,accuracy = get_validation_loss(args,test_data,model,criterion)
+	print test_loss, accuracy
 
 	return test_loss
 
@@ -217,28 +219,67 @@ def train_epoch(args, iterator, model, optimizer, criterion):
 
 	return model, optimizer, total_training_loss, accuracy,loss_vals
 
-def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss()):
+def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss(),infer=False):
 	model.eval()
 	total_validation_loss = 0.0
 	num_batches = 0
 	accuracy = 0
-	for i, batch in enumerate(iterator):
+	if len(iterator)==0:
+		return total_validation_loss, accuracy
+	for i,batch in enumerate(iterator):
 		if HAVE_CUDA:
 			batch[0],batch[1] = batch[0].cuda(),batch[1].cuda()
 		batch_data = ag.Variable(batch[0].float())
 		batch_labels = ag.Variable(batch[1].long())
 		pred_labels = model(batch_data)
 		# print torch.min(batch_labels.view(-1))
-
+		
 		#Backward pass
 		loss = criterion(pred_labels,batch_labels)
 		total_validation_loss += loss.data.cpu().numpy()
 		# print "accuracy", get_metrics(pred_labels,batch_labels)
 		num_batches += 1
-		temp_accuracy = get_metrics(pred_labels,batch_labels)
+		temp_accuracy = get_metrics(pred_labels,batch_labels,infer)
 		accuracy += temp_accuracy
 		# print total_validation_loss
-	total_validation_loss /= num_batches
-	accuracy /= num_batches
+	try:
+		total_validation_loss /= num_batches
+		accuracy /= num_batches
+	except Exception as e:
+		pass
 
 	return total_validation_loss, accuracy
+
+def infer(args,best = True, criterion=nn.CrossEntropyLoss()):
+	data_dir = args.data_dir
+	run_id =args.run_id
+	params_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"log","params.txt")
+	params_file = open(params_path,"r")
+	params = {}
+	for line in params_file:
+		temp = line.split()
+		params[str(temp[0])] = temp[2]
+	load_args(args, params)
+	setattr(args,"data_dir",data_dir) 
+	checkpoint_name = "best_checkpoint"
+	if not best:
+		checkpoint_name = "last_checkpoint"
+	checkpoint_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
+	print checkpoint_path
+	if not os.path.exists(checkpoint_path):
+		raise ValueError("No checkpoint found. Please train the model before testing")
+	all_datasets = dataReader(args)
+	train_data = all_datasets['train']
+	val_data = all_datasets['validation']
+	test_data = all_datasets['test']
+	model = load_model(args)
+	if HAVE_CUDA:
+		model = model.cuda()
+	loss,accuracy = get_validation_loss(args,train_data,model,criterion,infer = True)
+	print loss, accuracy
+	loss,accuracy = get_validation_loss(args,val_data,model,criterion,infer = True)
+	print loss, accuracy
+	loss,accuracy = get_validation_loss(args,test_data,model,criterion,infer = True)
+	print loss, accuracy
+	
+	return loss
