@@ -113,6 +113,16 @@ def getList(rootdir='.',suffix='',label=False):
 		return [os.path.join(looproot, filename)
         	for looproot, _, filenames in os.walk(rootdir)
         	for filename in filenames if filename.endswith(suffix)]
+def getCityList(img_path,mask_path,suffix=''):
+	images = []
+	labelIds = []
+	categories = os.listdir(img_path)
+	for c in categories:
+		c_items = [name.split('_leftImg8bit.png')[0] for name in os.listdir(os.path.join(img_path, c))]
+		for it in c_items:
+			images.append(os.path.join(img_path, c, it + '_leftImg8bit.png'))
+			labelIds.append(os.path.join(mask_path, c, it + suffix))
+	return labelIds,images
 
 def splitData(labelIds,images):
 	train_images,test_images,train_labels,test_labels = train_test_split(images,labelIds,test_size=0.2,random_state=42)
