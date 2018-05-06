@@ -186,8 +186,8 @@ def test(args,best=True,criterion=nn.CrossEntropyLoss()):
 	model = load_model(args)
 	if HAVE_CUDA:
 		model = model.cuda()
-	test_loss,accuracy = get_validation_loss(args,test_data,model,criterion)
-	print test_loss, accuracy
+	test_loss,accuracy,iou = get_validation_loss(args,test_data,model,criterion)
+	print test_loss, accuracy,iou
 
 	return test_loss
 
@@ -242,7 +242,7 @@ def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss(),infe
 	accuracy = 0
 	if len(iterator)==0:
 		return total_validation_loss, accuracy
-	for i,batch in enumerate(iterator):
+	for batch in tqdm(iterator):
 		if HAVE_CUDA:
 			batch[0],batch[1] = batch[0].cuda(),batch[1].cuda()
 		batch_data = ag.Variable(batch[0].float())
@@ -258,7 +258,8 @@ def get_validation_loss(args,iterator,model,criterion=nn.CrossEntropyLoss(),infe
 		temp_accuracy,temp_iou = get_metrics(args,pred_labels,batch_labels,infer)
 		accuracy += temp_accuracy
 		iou += temp_iou
-		# print total_validation_loss
+		#print total_validation_loss
+		print temp_iou
 	try:
 		total_validation_loss /= num_batches
 		accuracy /= num_batches

@@ -66,18 +66,20 @@ def compute_iou_single(args,pred,truth):
 		# print "int",torch.sum(int_i)
 		tp = torch.sum((pred_i + truth_i) == 2)
 		fpn = torch.sum((pred_i + truth_i) == 1)
-		# print fpn,tp
+		print "========"
+		print fpn,tp
 		# tot_c+=torch.sum(pred_i)
 		if pred.is_cuda:
 			tp = tp.cpu().numpy()
 			fpn = fpn.cpu().numpy()
-		try:
+		if fpn+tp >0:
 			iou_temp = tp*1.0/(tp+fpn)
-		except Exception as e:
+		else:
 			iou_temp = 0.0
-		# print iou_temp
+		print iou_temp
 		iou += iou_temp
 	# print "==========", tot_c
+	print iou
 	return iou/args.num_classes
 
 def prepare_env(args):
