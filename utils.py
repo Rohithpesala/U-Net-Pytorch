@@ -29,12 +29,14 @@ count = 0
 if HAVE_CUDA:
 	import torch.cuda as cuda
 
-def get_metrics(pred,truth):
+def get_metrics(pred,truth,infer=False):
 	# calculate IOU and other metrics required
 	_, pred = torch.max(pred,1)
 	total_count = 1.0
 	for i in truth.size():
 		total_count *= i
+	if infer:
+		reconstruct(pred.data)
 	correct_count = torch.sum(pred.data == truth.data)
 	if pred.is_cuda:
 		correct_count = correct_count.cpu().numpy()
@@ -119,6 +121,7 @@ def splitData(labelIds,images):
    	return train_labels,train_images,test_labels,test_images
 
 def decode_labels(temp):
+	temp=np.transpose(temp,[1,0])
 	red = temp.copy()
 	green = temp.copy()
 	blue = temp.copy()
@@ -135,8 +138,10 @@ def decode_labels(temp):
 def reconstruct(lbl_batches):
 	global count
 	for lbl in lbl_batches:
+		# print lbl,lbl[0:2]
 		lbl1 = decode_labels(lbl.numpy())
-		imsave("./lable"+count+".png",lbl1)
+		imsave("./lable"+str(count)+".png",lbl1)
+		count += 1
 
 def output_args(args):
 	file_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"log","params.txt")
@@ -144,3 +149,9 @@ def output_args(args):
 	for arg in vars(args):
 		print "%20s"%arg,"------", getattr(args,arg)
 		print >> log_file,"%20s"%arg,"------", getattr(args,arg)
+
+def load_args(args,params):
+	for arg in vars(args):
+		value = type(getattr(args,arg))(params[arg])
+		setattr(args,arg,value) 
+	# return args
