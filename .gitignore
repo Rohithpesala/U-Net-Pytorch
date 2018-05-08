@@ -8,3 +8,6 @@ Experiments/*
 myenv/*
 inferred/*
 infer_data/*
+Plots/*
+move/*
+*.png
